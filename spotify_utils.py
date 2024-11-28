@@ -1,25 +1,46 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-import random
+import time
 
 # Configuración de credenciales
-client_id = '7bfdd56301ca4eceadbe8ec3cd44b215'
-client_secret = 'c8ad40e17b5343bf829be31054385383'
+client_id = '1d29336f6a00486e9c0d5ac46ba67c78'
+client_secret = 'cce20ea8fc764f23b8fb50ba648e9e68'
 
-# Inicialización del cliente de Spotify
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=client_id, client_secret=client_secret))
+class SpotifyAuthManager:
+    def __init__(self, client_id, client_secret):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token = None
+        self.token_expiration_time = None
+        self.sp = None
+
+    def get_spotify_client(self):
+        """ Devuelve el cliente de Spotify, renovando el token si es necesario """
+        if not self.token or self.is_token_expired():
+            self.refresh_token()
+        return self.sp
+
+    def refresh_token(self):
+        """ Renueva el token de acceso y actualiza el tiempo de expiración """
+        auth_manager = SpotifyClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
+        self.sp = spotipy.Spotify(auth_manager=auth_manager)
+        # El token se obtiene mediante el cliente de autenticación
+        self.token = self.sp.auth_manager.get_access_token()
+        self.token_expiration_time = time.time() + self.token['expires_in']  # Establece el tiempo de expiración
+
+    def is_token_expired(self):
+        """ Verifica si el token ha expirado """
+        return time.time() >= self.token_expiration_time
+
+
+# Inicializar el manejador de autenticación
+auth_manager = SpotifyAuthManager(client_id, client_secret)
 
 def get_tracks_by_genre(genre, limit=50):
     """
     Obtiene una lista de IDs de pistas basadas en un género específico.
-
-    Args:
-        genre (str): El género musical.
-        limit (int): El número máximo de pistas a recuperar.
-
-    Returns:
-        list: Una lista de diccionarios con datos básicos de las pistas.
     """
+    sp = auth_manager.get_spotify_client()  # Usar el cliente con token válido
     results = sp.search(q=f'genre:{genre}', type='track', limit=limit)
     tracks = results['tracks']['items']
 
@@ -39,12 +60,6 @@ def get_tracks_by_genre(genre, limit=50):
 def generate_song_json(tracks):
     """
     Genera un JSON con detalles de las canciones, excluyendo el campo 'available_markets'.
-
-    Args:
-        tracks (list): Lista de pistas recuperadas.
-
-    Returns:
-        list: Una lista de diccionarios con los datos de las canciones.
     """
     songs_data = []
     for track in tracks:
@@ -78,16 +93,3 @@ def generate_song_json(tracks):
         }
         songs_data.append(song_data)
     return songs_data
-
-if __name__ == '__main__':
-    genre = 'edm'  # Cambia este género según lo necesites
-
-    # Obtiene los datos de las pistas
-    tracks = get_tracks_by_genre(genre)
-
-    # Genera el JSON de las canciones
-    songs_json = generate_song_json(tracks)
-
-    # Imprime el JSON resultante
-    import json
-    print(json.dumps(songs_json, indent=10))
