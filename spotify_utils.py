@@ -13,11 +13,12 @@ class SpotifyAuthManager:
         self.token = None
         self.token_expiration_time = None
         self.sp = None
+        self.refresh_token()
 
     def get_spotify_client(self):
         """ Devuelve el cliente de Spotify, renovando el token si es necesario """
         if not self.token or self.is_token_expired():
-            self.refresh_token()
+            self.refresh_token()  # Renueva el token si ha expirado
         return self.sp
 
     def refresh_token(self):
