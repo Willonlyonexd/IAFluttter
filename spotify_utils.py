@@ -31,7 +31,7 @@ def get_tracks_by_genre(genre, limit=50):
         if primary_artist not in unique_artists:
             unique_artists.add(primary_artist)
             unique_tracks.append(track)
-        if len(unique_tracks) == 5:  # Limitar a 5 canciones únicas
+        if len(unique_tracks) == 10:  # Limitar a 10 canciones únicas
             break
 
     return unique_tracks
@@ -90,4 +90,4 @@ if __name__ == '__main__':
 
     # Imprime el JSON resultante
     import json
-    print(json.dumps(songs_json, indent=4))
+    print(json.dumps(songs_json, indent=10))
